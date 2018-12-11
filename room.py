@@ -68,6 +68,7 @@ class SceneInterface(QMainWindow):
             button.resize(530, 40)
             button.setFont(QFont("PSG Font", 11))
             button.setStyleSheet("background: rgba(236, 236, 236, 0.7);")
+            button.clicked.connect(self.getKeyButtonSubmited)
 
     def initText(self, text):
         self.text.setPlainText(text)
@@ -84,21 +85,41 @@ class SceneInterface(QMainWindow):
     def initNamePlayer(self, name):
         self.name_player.setText(name)
 
-    def setNameDisabled(self):
-        self.name_player.setReadOnly(True)
+    def setNameUserMode(self, mode):
+        self.name_player.setReadOnly(mode)
+
+    def getKeyButtonSubmited(self):
+        submitted(self.sender().text())
+
+
+def update(obj, name="", text="", user="", image="", pldata="", buttons=[], user_disabled=True):
+    obj.initNameScene(name)
+    obj.initText(text)
+    obj.initButtons(buttons)
+    obj.initNamePlayer(user)
+    obj.initImage(image)
+    obj.initPlayerData(pldata)
+    obj.setNameUserMode(user_disabled)
+
+
+def submitted(variant):
+    ways = {"1 2": "Создатели", "1 3": "Помощь", "1 4": "Начать игру", "1 0": "Выход"} # Это как-то должно здесь оказаться
+    for key, value in ways.items():
+        if value == variant:
+            # Здесь вызывается функция f(key), которая подготавливая новые данные обновляет сцену
+            return key
 
 
 app = QApplication(sys.argv)
 ex = SceneInterface()
 ex.setFixedSize(800, 500)
-
-ex.initNameScene("Scene")
-ex.initText("This is simple text forever")
-ex.initButtons(["Вариант 1", "Вариант 2", "Вариант 3"])
-ex.initNamePlayer("user123")
-ex.initImage("img.jpg")
-ex.initPlayerData("DataPlayer")
-ex.setNameDisabled()
+update(ex, name="Scene",
+       text="This is simple text forever",
+       user="user123",
+       image="img.jpg",
+       pldata="DataPlayer",
+       buttons=["Создатели", "Помощь", "Начать игру", "Выход"],
+       user_disabled=False)
 
 pygame.mixer.init()
 pygame.mixer.music.load('Quest Theme.mp3')
