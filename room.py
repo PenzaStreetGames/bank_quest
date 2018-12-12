@@ -1,6 +1,7 @@
 import sys
 import pygame
-from PyQt5.QtCore import QSize, QStringListModel
+from PyQt5.QtCore import QSize, QStringListModel, Qt
+from time import sleep
 from PyQt5.QtWidgets import QApplication, QPushButton, QLabel, QPlainTextEdit, QVBoxLayout
 from PyQt5.QtWidgets import QMainWindow, QTableWidget, QWidget, QLineEdit
 from PyQt5.QtGui import QPixmap, QFont
@@ -102,17 +103,17 @@ class SceneInterface(QMainWindow):
                     self.deleteItemsOfLayout(item.layout())
 
 
-def update(obj, name="", text="", user="", image="", pldata="", buttons=[], user_disabled=True):
-    obj.initNameScene(name)
-    obj.initText(text)
-    obj.initButtons(buttons)
-    obj.initNamePlayer(user)
-    obj.initImage(image)
-    obj.initPlayerData(pldata)
-    obj.setNameUserMode(user_disabled)
+    def update(self, name="", text="", user="", image="", pldata="", buttons=[], user_disabled=True):
+        self.initNameScene(name)
+        self.initText(text)
+        self.initButtons(buttons)
+        self.initNamePlayer(user)
+        self.initImage(image)
+        self.initPlayerData(pldata)
+        self.setNameUserMode(user_disabled)
 
 
-def submitted(variant, el):
+def submitted(variant):
     ways = {"1 2": "Создатели", "1 3": "Помощь", "1 4": "Начать игру", "1 0": "Выход"} # Это как-то должно здесь оказаться
     for key, value in ways.items():
         if value == variant:
@@ -123,24 +124,24 @@ def submitted(variant, el):
 app = QApplication(sys.argv)
 ex = SceneInterface()
 ex.setFixedSize(800, 500)
-update(ex, name="Scene",
-       text="This is simple text forever",
-       user="user123",
-       image="img.jpg",
-       pldata="DataPlayer",
-       buttons=["Создатели", "Помощь", "Начать игру", "Выход"],
-       user_disabled=False)
+def a():
+    ex.update(name="Scene",
+           text="This is simple text forever",
+           user="user123",
+           image="img.jpg",
+           pldata="DataPlayer",
+           buttons=["Создатели", "Помощь", "Начать игру", "Выход"],
+           user_disabled=False)
+    ex.deleteItemsOfLayout(ex.layout)
 
-ex.deleteItemsOfLayout(ex.layout)
-update(ex)
-update(ex, name="Scene2",
-       text="This is simple text forever2",
-       user="user123",
-       image="img.jpg",
-       pldata="DataPlayer2",
-       buttons=["Создатели", "Помощь"],
-       user_disabled=True)
-
+    ex.update(name="Scene2",
+                   text="This is simple text forever2",
+                   user="user123",
+                   image="img.jpg",
+                   pldata="DataPlayer2",
+                   buttons=["Создатели", "Помощь"],
+                   user_disabled=True)
+a()
 
 pygame.mixer.init()
 pygame.mixer.music.load('Quest Theme.mp3')

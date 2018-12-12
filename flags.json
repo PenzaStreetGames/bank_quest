@@ -4,7 +4,7 @@
   "too_much_drink": False,
   "procent_to_smit": False,
   "meet_drunkard": False,
-  "detonate_or_resolve_task": False,
+  "detonate_or_resolve": False,
   "kill_friends": False,
   "procent_to_friends": False,
 
