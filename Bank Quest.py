@@ -175,9 +175,32 @@ class Quest:
     def check_state(self):
         self.state = []
         self.state += [self.data["current_task"]]
-        if self.properties["john_percent"]:
-            self.state += [self.data["go_to_john"]]
-        ###
+        if self.properties["john_percent"] == 0:
+            self.state += [self.data["states"]["go_to_john"]]
+        elif self.properties["emmet_percent"] == 0:
+            self.state += [self.data["states"]["go_to_emmet"]]
+        elif self.properties["smith_percent"] == 0:
+            self.state += [self.data["states"]["go_to_smith"]]
+        else:
+            self.state += [self.data["states"]["go_to_home"]]
+        if self.properties["john_percent"] != 0:
+            self.state += [self.data["states"]["john_in_band"]]
+        if self.properties["john_percent"] == 1:
+            self.state += [self.data["states"]["small_percent"]]
+        elif self.propeties["john_percent"] == 2:
+            self.state += [self.data["states"]["big_percent"]]
+        if self.properties["emmet_percent"] != 0:
+            self.state += [self.data["states"]["emmet_in_band"]]
+        if self.properties["emmet_percent"] == 1:
+            self.state += [self.data["states"]["small_percent"]]
+        elif self.propeties["emmet_percent"] == 2:
+            self.state += [self.data["states"]["big_percent"]]
+        if self.properties["smith_percent"] != 0:
+            self.state += [self.data["states"]["smith_in_band"]]
+        if self.properties["smith_percent"] == 1:
+            self.state += [self.data["states"]["small_percent"]]
+        elif self.propeties["smith_percent"] == 2:
+            self.state += [self.data["states"]["big_percent"]]
 
 
 class Room:
