@@ -175,5 +175,13 @@
     "emmet_percent": 0,
     "smith_percent": 0,
     "alcohol": 0
+  },
+  "save":
+  {
+    "player": "Carl",
+    "current_room": 0,
+    "john_percent": 0,
+    "emmet_percent": 0,
+    "smith_percent": 0
   }
 }
