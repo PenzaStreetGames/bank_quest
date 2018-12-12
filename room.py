@@ -67,6 +67,7 @@ class SceneInterface(QMainWindow):
             button.resize(530, 40)
             button.setFont(QFont("PSG Font", 11))
             button.setStyleSheet("background: rgba(236, 236, 236, 0.7);")
+            button.move(20, (45 * btn) + 300)
             button.clicked.connect(self.getKeyButtonSubmited)
             self.btn_layout.addWidget(button)
             self.buttons += [button]
@@ -77,9 +78,11 @@ class SceneInterface(QMainWindow):
         for i in range(4):
             self.buttons[i].setText(names[i])
             if names[i]:
-                self.buttons[i].move(20, (45 * i) + 300)
+                self.buttons[i].setEnabled(True)
+                self.buttons[i].setStyleSheet("background: rgba(236, 236, 236, 0.7);")
             else:
-                self.buttons[i].move(0, 10000)
+                self.buttons[i].setEnabled(False)
+                self.buttons[i].setStyleSheet("background: rgba(236, 236, 236, 0);")
 
 
     def initText(self, text):
@@ -102,6 +105,7 @@ class SceneInterface(QMainWindow):
 
     def getKeyButtonSubmited(self):
         self.submitted(self.sender().text())
+        print("asdf")
 
     def update(self, name="", text="", user="", image="", pldata="", buttons=[], user_disabled=True):
         self.initNameScene(name)
