@@ -63,12 +63,12 @@ class SceneInterface(QMainWindow):
     def initButtons(self, names):
         for btn in range(len(names)):
             button = QPushButton(names[btn], self)
-            self.btn_layout.addWidget(button)
             button.move(20, (45 * btn) + 300)
             button.resize(530, 40)
             button.setFont(QFont("PSG Font", 11))
             button.setStyleSheet("background: rgba(236, 236, 236, 0.7);")
             button.clicked.connect(self.getKeyButtonSubmited)
+            self.btn_layout.addWidget(button)
 
     def initText(self, text):
         self.text.setPlainText(text)
@@ -91,6 +91,16 @@ class SceneInterface(QMainWindow):
     def getKeyButtonSubmited(self):
         submitted(self.sender().text())
 
+    def deleteItemsOfLayout(self, layout):
+        if layout is not None:
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.setParent(None)
+                else:
+                    self.deleteItemsOfLayout(item.layout())
+
 
 def update(obj, name="", text="", user="", image="", pldata="", buttons=[], user_disabled=True):
     obj.initNameScene(name)
@@ -102,7 +112,7 @@ def update(obj, name="", text="", user="", image="", pldata="", buttons=[], user
     obj.setNameUserMode(user_disabled)
 
 
-def submitted(variant):
+def submitted(variant, el):
     ways = {"1 2": "Создатели", "1 3": "Помощь", "1 4": "Начать игру", "1 0": "Выход"} # Это как-то должно здесь оказаться
     for key, value in ways.items():
         if value == variant:
@@ -120,6 +130,17 @@ update(ex, name="Scene",
        pldata="DataPlayer",
        buttons=["Создатели", "Помощь", "Начать игру", "Выход"],
        user_disabled=False)
+
+ex.deleteItemsOfLayout(ex.layout)
+update(ex)
+update(ex, name="Scene2",
+       text="This is simple text forever2",
+       user="user123",
+       image="img.jpg",
+       pldata="DataPlayer2",
+       buttons=["Создатели", "Помощь"],
+       user_disabled=True)
+
 
 pygame.mixer.init()
 pygame.mixer.music.load('Quest Theme.mp3')
