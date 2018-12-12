@@ -116,6 +116,8 @@ class Quest:
 
     def __init__(self, name):
         self.player = name
+        self.properties = {}
+        self.state = []
         self.rooms = {}
         self.ways = {}
         self.data = {}
@@ -124,6 +126,7 @@ class Quest:
         self.create_rooms()
         self.current_room = self.rooms["1"]
         self.create_ways()
+        self.default_properties()
 
         buttons = list(map(lambda hall: hall.text, self.find_active_ways()))
         update(ex, buttons=buttons)
@@ -148,6 +151,9 @@ class Quest:
     def change_room(self, name):
         self.current_room = self.rooms[name]
 
+    def default_properties(self):
+        self.properties = self.data["flags"]
+
     def create_ways(self):
         self.ways = {}
         way_items = list(self.data["ways"].items())
@@ -166,6 +172,13 @@ class Quest:
                 active_ways += [way]
         return active_ways
 
+    def check_state(self):
+        self.state = []
+        self.state += [self.data["current_task"]]
+        if self.properties["john_percent"]:
+            self.state += [self.data["go_to_john"]]
+        ###
+
 
 class Room:
 
@@ -183,10 +196,6 @@ class Hall:
         self.room_to = room_to
         self.name = name
         self.text = text
-
-    def check_condition(self):
-
-        self.value = eval(self.condition)
 
 
 class Example(QWidget):
