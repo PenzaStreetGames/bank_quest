@@ -61,15 +61,29 @@ class SceneInterface(QMainWindow):
         self.btn_layout.addItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
         self.layout.addLayout(self.btn_layout)
 
-    def initButtons(self, names):
-        for btn in range(len(names)):
-            button = QPushButton(names[btn], self)
-            self.btn_layout.addWidget(button)
-            button.move(20, (45 * btn) + 300)
+        self.buttons = []
+        for btn in range(4):
+            button = QPushButton("", self)
             button.resize(530, 40)
             button.setFont(QFont("PSG Font", 11))
             button.setStyleSheet("background: rgba(236, 236, 236, 0.7);")
+            button.move(20, (45 * btn) + 300)
             button.clicked.connect(self.getKeyButtonSubmited)
+            self.btn_layout.addWidget(button)
+            self.buttons += [button]
+
+    def initButtons(self, names):
+        while len(names) < 4:
+            names += [""]
+        for i in range(4):
+            self.buttons[i].setText(names[i])
+            if names[i]:
+                self.buttons[i].setEnabled(True)
+                self.buttons[i].setStyleSheet("background: rgba(236, 236, 236, 0.7);")
+            else:
+                self.buttons[i].setEnabled(False)
+                self.buttons[i].setStyleSheet("background: rgba(236, 236, 236, 0);")
+
 
     def initText(self, text):
         self.text.setPlainText(text)
@@ -90,26 +104,32 @@ class SceneInterface(QMainWindow):
         self.name_player.setReadOnly(mode)
 
     def getKeyButtonSubmited(self):
-        submitted(self.sender().text())
+        self.submitted(self.sender().text())
+        print("asdf")
+
+    def update(self, name="", text="", user="", image="", pldata="", buttons=[], user_disabled=True):
+        self.initNameScene(name)
+        self.initText(text)
+        self.initButtons(buttons)
+        self.initNamePlayer(user)
+        self.initImage(image)
+        self.initPlayerData(pldata)
+        self.setNameUserMode(user_disabled)
 
 
-def update(obj, name="", text="", user="", image="", pldata="", buttons=[], user_disabled=True):
-    obj.initNameScene(name)
-    obj.initText(text)
-    obj.initButtons(buttons)
-    obj.initNamePlayer(user)
-    obj.initImage(image)
-    obj.initPlayerData(pldata)
-    obj.setNameUserMode(user_disabled)
-    obj.show()
-
-
-def submitted(variant):
-    ways = {"1 2": "Создатели", "1 3": "Помощь", "1 4": "Начать игру", "1 0": "Выход"} # Это как-то должно здесь оказаться
-    for key, value in ways.items():
-        if value == variant:
-            # Здесь вызывается функция f(key), которая подготавливая новые данные обновляет сцену
-            return key
+    def submitted(self, variant):
+        ways = {"1 2": "Создатели", "1 3": "Помощь", "1 4": "Начать игру", "1 0": "Выход"} # Это как-то должно здесь оказаться
+        for key, value in ways.items():
+            if value == variant:
+                # Здесь вызывается функция f(key), которая подготавливая новые данные обновляет сцену
+                self.update(name="Scene2",
+                          text="This is simple text forever2",
+                          user="user123",
+                          image="img.jpg",
+                          pldata="DataPlayer2",
+                          buttons=["Создатели", "Помощь"],
+                          user_disabled=True)
+                return key
 
 
 class Quest:
@@ -129,8 +149,7 @@ class Quest:
         self.default_properties()
 
         buttons = list(map(lambda hall: hall.text, self.find_active_ways()))
-        update(ex, buttons=buttons)
-        print(buttons)
+        ex.update(buttons=buttons)
 
         # self.buttons = [canvas.choose_1, canvas.choose_2,
         #                canvas.choose_3, canvas.choose_4]
@@ -231,7 +250,7 @@ class Example(QWidget):
 app = QApplication(sys.argv)
 ex = SceneInterface()
 ex.setFixedSize(800, 500)
-update(ex, name="Scene",
+ex.update(name="Scene",
        text="This is simple text forever",
        user="user123",
        image="img.jpg",
