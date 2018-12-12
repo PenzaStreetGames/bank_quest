@@ -126,5 +126,5 @@ pygame.mixer.music.load('Quest Theme.mp3')
 pygame.mixer.music.play(-1)
 
 ex.show()
-sys.exit(app.exec_())
+sys.exit(app.exec())
 
