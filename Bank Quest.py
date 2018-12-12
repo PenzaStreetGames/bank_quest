@@ -32,14 +32,14 @@ class SceneInterface(QMainWindow):
         self.text.move(20, 20)
         self.text.resize(530, 270)
         self.text.setReadOnly(True)
-        self.text.setFont(QFont("PSG Font", 10))
+        self.text.setFont(QFont("PSG Font", 11))
         self.text.setStyleSheet("background: rgba(255, 255, 255, 0.9);")
 
         self.player_data = QPlainTextEdit(self)
         self.player_data.move(560, 300)
         self.player_data.resize(220, 130)
         self.player_data.setReadOnly(True)
-        self.player_data.setFont(QFont("PSG Font", 10))
+        self.player_data.setFont(QFont("PSG Font", 11))
         self.player_data.setStyleSheet("background: rgba(238, 238, 238, 0.97);\
                                         border:none;")
 
@@ -105,7 +105,6 @@ class SceneInterface(QMainWindow):
 
     def getKeyButtonSubmited(self):
         self.submitted(self.sender().text())
-        print("asdf")
 
     def update(self, name="", text="", user="", image="", pldata="", buttons=[], user_disabled=True):
         self.initNameScene(name)
@@ -118,18 +117,18 @@ class SceneInterface(QMainWindow):
 
 
     def submitted(self, variant):
-        ways = {"1 2": "Создатели", "1 3": "Помощь", "1 4": "Начать игру", "1 0": "Выход"} # Это как-то должно здесь оказаться
+        ways = quest.data["ways"]
         for key, value in ways.items():
             if value == variant:
-                # Здесь вызывается функция f(key), которая подготавливая новые данные обновляет сцену
+                """# Здесь вызывается функция f(key), которая подготавливая новые данные обновляет сцену
                 self.update(name="Scene2",
                           text="This is simple text forever2",
                           user="user123",
                           image="img.jpg",
                           pldata="DataPlayer2",
                           buttons=["Создатели", "Помощь"],
-                          user_disabled=True)
-                return key
+                          user_disabled=True)"""
+                quest.user_move(key)
 
 
 class Quest:
@@ -151,12 +150,6 @@ class Quest:
         buttons = list(map(lambda hall: hall.text, self.find_active_ways()))
         ex.update(buttons=buttons)
 
-        # self.buttons = [canvas.choose_1, canvas.choose_2,
-        #                canvas.choose_3, canvas.choose_4]
-
-    def change_room(self, index):
-        pass
-
     def create_rooms(self):
         self.rooms = {}
         room_names, room_text = (self.data["room_names"],
@@ -167,8 +160,23 @@ class Quest:
                         "img.jmg", i)
             self.rooms[str(i)] = room
 
-    def change_room(self, name):
-        self.current_room = self.rooms[name]
+    def user_move(self, way):
+        print(self.ways[way].room_to.index)
+        room_into = self.ways[way].room_to.index
+        self.change_room(str(room_into))
+
+    def change_room(self, index):
+        if index == "0":
+            ex.close()
+        self.current_room = self.rooms[index]
+        self.update_room()
+
+    def update_room(self):
+        room = self.current_room
+        buttons = list(map(lambda hall: hall.text, self.find_active_ways()))
+        self.check_state()
+        state = "\n".join(self.state)
+        ex.update(text=room.text, buttons=buttons, pldata=state)
 
     def default_properties(self):
         self.properties = self.data["flags"]
@@ -193,7 +201,7 @@ class Quest:
 
     def check_state(self):
         self.state = []
-        self.state += [self.data["current_task"]]
+        self.state += [self.data["states"]["current_task"]]
         if self.properties["john_percent"] == 0:
             self.state += [self.data["states"]["go_to_john"]]
         elif self.properties["emmet_percent"] == 0:
@@ -206,19 +214,19 @@ class Quest:
             self.state += [self.data["states"]["john_in_band"]]
         if self.properties["john_percent"] == 1:
             self.state += [self.data["states"]["small_percent"]]
-        elif self.propeties["john_percent"] == 2:
+        elif self.properties["john_percent"] == 2:
             self.state += [self.data["states"]["big_percent"]]
         if self.properties["emmet_percent"] != 0:
             self.state += [self.data["states"]["emmet_in_band"]]
         if self.properties["emmet_percent"] == 1:
             self.state += [self.data["states"]["small_percent"]]
-        elif self.propeties["emmet_percent"] == 2:
+        elif self.properties["emmet_percent"] == 2:
             self.state += [self.data["states"]["big_percent"]]
         if self.properties["smith_percent"] != 0:
             self.state += [self.data["states"]["smith_in_band"]]
         if self.properties["smith_percent"] == 1:
             self.state += [self.data["states"]["small_percent"]]
-        elif self.propeties["smith_percent"] == 2:
+        elif self.properties["smith_percent"] == 2:
             self.state += [self.data["states"]["big_percent"]]
 
 
@@ -250,13 +258,13 @@ class Example(QWidget):
 app = QApplication(sys.argv)
 ex = SceneInterface()
 ex.setFixedSize(800, 500)
-ex.update(name="Scene",
+"""ex.update(name="Scene",
        text="This is simple text forever",
        user="user123",
        image="img.jpg",
        pldata="DataPlayer",
        buttons=["Создатели", "Помощь", "Начать игру", "Выход"],
-       user_disabled=False)
+       user_disabled=False)"""
 
 pygame.mixer.init()
 pygame.mixer.music.load('Quest Theme.mp3')
@@ -265,5 +273,6 @@ pygame.mixer.music.play(-1)
 ex.show()
 
 quest = Quest("name")
+quest.change_room("1")
 
 sys.exit(app.exec())
