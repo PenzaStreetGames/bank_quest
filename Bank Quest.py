@@ -146,22 +146,50 @@ class Quest:
         self.current_room = self.rooms["1"]
         self.create_ways()
         self.default_properties()
-
-        buttons = list(map(lambda hall: hall.text, self.find_active_ways()))
-        ex.update(buttons=buttons)
+        ex.update(user_disabled=False)
 
     def create_rooms(self):
         self.rooms = {}
         room_names, room_text = (self.data["room_names"],
                                  self.data["room_text"])
         for i in range(len(room_names)):
-            i = i + 1
             room = Room(room_names[str(i)], room_text[str(i)],
                         "img.jmg", i)
             self.rooms[str(i)] = room
 
     def user_move(self, way):
         print(self.ways[way].room_to.index)
+        if way == "1 4":
+            self.player = ex.name_player.text()
+            ex.update(user_disabled=True)
+        elif way == "1 0":
+            ex.close()
+        elif way.endswith(" 1"):
+            self.default_properties()
+        elif way == "10 12":
+            self.properties["john_percent"] = 1
+        elif way == "10 11":
+            self.properties["john_percent"] = 2
+        elif way == "15 16":
+            self.properties["emmet_percent"] = 1
+        elif way == "15 17":
+            self.properties["emmet_percent"] = 2
+        elif way == "24 25":
+            self.properties["smith_percent"] = 1
+        elif way == "24 26":
+            self.properties["smith_percent"] = 2
+        elif way == "20 21":
+            self.properties["alcohol"] = 1
+        elif way == "20 22":
+            self.properties["alcohol"] = 2
+        elif way == "20 23":
+            self.properties["alcohol"] = 3
+        elif way == "10 13":
+            self.properties["emmet_know"] = True
+        elif way == "15 18":
+            self.properties["smith_know"] = True
+        elif way == "5 27":
+            self.properties["rob_begin"] = True
         room_into = self.ways[way].room_to.index
         self.change_room(str(room_into))
 
@@ -174,12 +202,14 @@ class Quest:
     def update_room(self):
         room = self.current_room
         buttons = list(map(lambda hall: hall.text, self.find_active_ways()))
-        self.check_state()
+        if int(self.current_room.index) > 4:
+            self.check_state()
         state = "\n".join(self.state)
         ex.update(text=room.text, buttons=buttons, pldata=state)
 
     def default_properties(self):
         self.properties = self.data["flags"]
+        self.state = []
 
     def create_ways(self):
         self.ways = {}
@@ -196,7 +226,70 @@ class Quest:
         active_ways = []
         for way in self.ways.values():
             if way.room_from.index == self.current_room.index:
-                active_ways += [way]
+                if (way.name == "5 27" and
+                     self.properties["smith_percent"] == 0):
+                    pass
+                elif (way.name == "7 14" and
+                      not self.properties["emmet_know"]):
+                    pass
+                elif (way.name == "8 20" and
+                      not self.properties["smith_know"]):
+                    pass
+                elif (way.name == "10 13" and
+                      (self.properties["john_percent"] == 0 or
+                       self.properties["emmet_know"])):
+                    pass
+                elif (way.name == "10 11" and
+                      self.properties["john_percent"] != 0):
+                    pass
+                elif (way.name == "10 12" and
+                      self.properties["john_percent"] != 0):
+                    pass
+                elif (way.name == "15 18" and
+                      (self.properties["emmet_percent"] == 0 or
+                       self.properties["smith_know"])):
+                    pass
+                elif (way.name == "15 16" and
+                      self.properties["emmet_percent"] != 0):
+                    pass
+                elif (way.name == "15 17" and
+                      self.properties["emmet_percent"] != 0):
+                    pass
+                elif (way.name == "24 25" and
+                      self.properties["smith_percent"] != 0):
+                    pass
+                elif (way.name == "24 26" and
+                      self.properties["smith_percent"] != 0):
+                    pass
+                elif (way.name == "20 21" and
+                      self.properties["alcohol"] != 0):
+                    pass
+                elif (way.name == "20 22" and
+                      self.properties["alcohol"] != 1):
+                    pass
+                elif (way.name == "20 23" and
+                      self.properties["alcohol"] != 2):
+                    pass
+                elif (way.name == "28 29" and
+                      self.properties["smith_percent"] != 1):
+                    pass
+                elif (way.name == "28 30" and
+                      self.properties["smith_percent"] != 2):
+                    pass
+                elif (way.name == "33 34" and
+                      self.properties["emmet_percent"] != 1):
+                    pass
+                elif (way.name == "33 35" and
+                      self.properties["emmet_percent"] != 2):
+                    pass
+                elif (way.name == "35 36" and
+                      self.properties["john_percent"] != 1):
+                    pass
+                elif (way.name == "35 38" and
+                      self.properties["john_percent"] != 2):
+                    pass
+                else:
+                    active_ways += [way]
         return active_ways
 
     def check_state(self):
@@ -204,12 +297,19 @@ class Quest:
         self.state += [self.data["states"]["current_task"]]
         if self.properties["john_percent"] == 0:
             self.state += [self.data["states"]["go_to_john"]]
+        elif not self.properties["emmet_know"]:
+            self.state += [self.data["states"]["ask_about_emmet"]]
         elif self.properties["emmet_percent"] == 0:
             self.state += [self.data["states"]["go_to_emmet"]]
+        elif not self.properties["smith_know"]:
+            self.state += [self.data["states"]["ask_about_smith"]]
         elif self.properties["smith_percent"] == 0:
             self.state += [self.data["states"]["go_to_smith"]]
-        else:
+        elif not self.properties["rob_begin"]:
             self.state += [self.data["states"]["go_to_home"]]
+        else:
+            self.state += [self.data["states"]["rob_a_bank"]]
+        self.state[-1] += "\n"
         if self.properties["john_percent"] != 0:
             self.state += [self.data["states"]["john_in_band"]]
         if self.properties["john_percent"] == 1:
