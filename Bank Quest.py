@@ -190,6 +190,10 @@ class Quest:
             self.properties["smith_know"] = True
         elif way == "5 27":
             self.properties["rob_begin"] = True
+        elif way == "40 20":
+            self.properties["james_meet"] = 1
+        elif way == "42 14":
+            self.properties["james_meet"] = 2
         room_into = self.ways[way].room_to.index
         self.change_room(str(room_into))
 
@@ -208,6 +212,7 @@ class Quest:
         ex.update(text=room.text, buttons=buttons, pldata=state)
 
     def default_properties(self):
+        self.data = loads(open("bq_data.json", "r", encoding="utf-8").read())
         self.properties = self.data["flags"]
         self.state = []
 
@@ -288,6 +293,15 @@ class Quest:
                 elif (way.name == "35 38" and
                       self.properties["john_percent"] != 2):
                     pass
+                elif (way.name == "20 40" and
+                      self.properties["james_meet"] != 0):
+                    pass
+                elif (way.name == "27 44" and
+                      self.properties["james_meet"] != 2):
+                    pass
+                elif (way.name == "33 46" and
+                      self.properties["james_meet"] != 2):
+                    pass
                 else:
                     active_ways += [way]
         return active_ways
@@ -310,6 +324,14 @@ class Quest:
         else:
             self.state += [self.data["states"]["rob_a_bank"]]
         self.state[-1] += "\n"
+        if self.properties["james_meet"] == 2:
+            self.state += [self.data["states"]["sewage_plan"]]
+        if self.properties["alcohol"] == 1:
+            self.state += [self.data["states"]["some_alcohol"]]
+        elif self.properties["alcohol"] == 2:
+            self.state += [self.data["states"]["much_alcohol"]]
+        elif self.properties["alcohol"] == 3:
+            self.state += [self.data["states"]["too_much_alcohol"]]
         if self.properties["john_percent"] != 0:
             self.state += [self.data["states"]["john_in_band"]]
         if self.properties["john_percent"] == 1:
