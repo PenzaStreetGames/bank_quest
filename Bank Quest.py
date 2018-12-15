@@ -1,15 +1,14 @@
 import sys
-import pygame
+from pygame import mixer
 from PyQt5.QtCore import QSize, QStringListModel
 from PyQt5.QtWidgets import QApplication, QPushButton, QLabel, QPlainTextEdit, QVBoxLayout
 from PyQt5.QtWidgets import QMainWindow, QTableWidget, QWidget, QLineEdit, QMessageBox
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.Qt import QHBoxLayout, QSpacerItem, QSizePolicy
-from json import loads
+from json import loads, dumps
 import time
 import datetime
 from tests import Tester
-from room import SceneInterface
 
 
 class SceneInterface(QMainWindow):
@@ -19,28 +18,28 @@ class SceneInterface(QMainWindow):
         self.bg = QLabel(self)
         self.bg.move(0, 0)
         self.bg.setPixmap(QPixmap("bg.jpg"))
-        self.bg.resize(800, 500)
+        self.bg.resize(800, 560)
 
         self.exit = QPushButton('Выход', self)
         self.exit.resize(105, 40)
-        self.exit.move(675, 457)
+        self.exit.move(675, 510)
         self.exit.setFont(QFont("PSG Font", 11))
         self.exit.clicked.connect(self.close)
 
         self.restart = QPushButton('Рестарт', self)
         self.restart.resize(110, 40)
-        self.restart.move(560, 457)
+        self.restart.move(560, 510)
         self.restart.setFont(QFont("PSG Font", 11))
 
-        self.opnsave = QPushButton('Открыть', self)
+        self.opnsave = QPushButton('Загрузить', self)
         self.opnsave.resize(105, 40)
-        self.opnsave.move(675, 415)
+        self.opnsave.move(135, 510)
         self.opnsave.setFont(QFont("PSG Font", 11))
         # self.opnsave.clicked.connect(self.opensave)
 
         self.savebtn = QPushButton('Сохранить', self)
         self.savebtn.resize(110, 40)
-        self.savebtn.move(560, 415)
+        self.savebtn.move(20, 510)
         self.savebtn.setFont(QFont("PSG Font", 11))
         # self.opnsave.clicked.connect(self.save)
 
@@ -54,21 +53,20 @@ class SceneInterface(QMainWindow):
 
         self.player_data = QPlainTextEdit(self)
         self.player_data.move(560, 300)
-        self.player_data.resize(220, 110)
+        self.player_data.resize(220, 175)
         self.player_data.setReadOnly(True)
         self.player_data.setFont(QFont("PSG Font", 10))
         self.player_data.setStyleSheet("background: rgba(238, 238, 238, 0.97);\
                                         border:none;")
 
         self.name_player = QLineEdit(self)
+        self.name_player.setPlaceholderText("Введите имя...")
         self.name_player.resize(220, 44)
         self.name_player.move(560, 245)
         self.name_player.setFont(QFont("PSG Font", 11))
         self.name_player.setStyleSheet("background: rgba(255, 255, 255, 0.90);\
                                         border:none;\
                                         padding-left: 5px;")
-
-
 
         self.img = QLabel(self)
         self.img.resize(220, 220)
@@ -91,7 +89,7 @@ class SceneInterface(QMainWindow):
             self.btn_layout.addWidget(button)
             self.buttons += [button]
 
-    def getNameUser(self):
+    def get_name_user(self):
         return self.name_player.text()
 
     def initButtons(self, names):
@@ -140,7 +138,7 @@ class SceneInterface(QMainWindow):
 
     def submitted(self, variant):
         ways = quest.data["ways"]
-        name = self.getNameUser()
+        name = self.get_name_user()
         for key, value in ways.items():
             if value == variant:
                 if key == "1 4" and not name:
@@ -150,12 +148,11 @@ class SceneInterface(QMainWindow):
                 self.name_player.setText(name)
 
 
-
 class Quest:
 
-    def __init__(self, name):
+    def __init__(self):
         self.game_time = 0
-        self.player = name
+        self.player = ""
         self.properties = {}
         self.state = []
         self.rooms = {}
@@ -177,17 +174,16 @@ class Quest:
                         "img.jmg", i)
             self.rooms[str(i)] = room
 
-
     def user_move(self, way):
         self.eventlistener(self.ways[way].room_to.index)
         print(self.ways[way].room_to.index)
         if way == "1 4":
             self.player = ex.name_player.text()
-            ex.update(user_disabled=True)
         elif way == "1 0":
             ex.close()
         elif way.endswith(" 1"):
             self.default_properties()
+            self.save()
         elif way == "10 12":
             self.properties["john_percent"] = 1
         elif way == "10 11":
@@ -219,19 +215,17 @@ class Quest:
         room_into = self.ways[way].room_to.index
         self.change_room(str(room_into))
 
-
     def eventlistener(self, scene):
+        print(scene)
         if scene == 1:
             self.game_time = 0
         elif scene == 4:
             self.game_time = time.time()
-        elif scene == 38:
-            self.game_time = time.time() - self.game_time
-            self.save(self.player, self.game_time)
 
-    def save(self, name, time):
-        with open("records.txt", mode="w", encoding="utf-8") as file:
-            file.write("{name} {time}\n".format(name=name, time=int(time)))
+    def save(self):
+        with open("{}.json".format(ex.get_name_user()), mode="r+", encoding="utf-8") as file:
+            self.properties["time"] = self.game_time = time.time() - self.game_time
+            file.write(dumps(self.properties) + "\n")
 
     def change_room(self, index):
         if index == "0":
@@ -245,7 +239,7 @@ class Quest:
         if int(self.current_room.index) > 4:
             self.check_state()
         state = "\n".join(self.state)
-        ex.update(text=room.text, buttons=buttons, pldata=state,
+        ex.update(text=room.text, buttons=buttons, pldata=state, image="img.jpg",
                   user_disabled=False if self.current_room.index == 1 else True)
 
     def default_properties(self):
@@ -416,19 +410,18 @@ class Example(QWidget):
 
 app = QApplication(sys.argv)
 ex = SceneInterface()
-ex.setFixedSize(800, 500)
+ex.setFixedSize(800, 560)
 
-pygame.mixer.init()
-pygame.mixer.music.load('Quest Theme.mp3')
-pygame.mixer.music.play(-1)
+mixer.init()
+mixer.music.load('Quest Theme.mp3')
+mixer.music.play(-1)
 
 ex.show()
 
-quest = Quest(ex.getNameUser())
+quest = Quest()
 quest.change_room("1")
 
-
-start = datetime.datetime.now()
-
+# t = Tester(quest.data)
+# t.test_isset_scene(200)
 
 sys.exit(app.exec())
