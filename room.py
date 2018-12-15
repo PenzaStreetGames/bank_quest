@@ -19,25 +19,38 @@ class SceneInterface(QMainWindow):
 
         self.exit = QPushButton('Выход', self)
         self.exit.resize(105, 40)
-        self.exit.move(675, 455)
+        self.exit.move(675, 457)
         self.exit.setFont(QFont("PSG Font", 11))
         self.exit.clicked.connect(self.close)
 
         self.restart = QPushButton('Рестарт', self)
-        self.restart.resize(105, 40)
-        self.restart.move(560, 455)
+        self.restart.resize(110, 40)
+        self.restart.move(560, 457)
         self.restart.setFont(QFont("PSG Font", 11))
+
+        self.opnsave = QPushButton('Открыть', self)
+        self.opnsave.resize(105, 40)
+        self.opnsave.move(675, 415)
+        self.opnsave.setFont(QFont("PSG Font", 11))
+        # self.opnsave.clicked.connect(self.opensave)
+
+        self.savebtn = QPushButton('Сохранить', self)
+        self.savebtn.resize(110, 40)
+        self.savebtn.move(560, 415)
+        self.savebtn.setFont(QFont("PSG Font", 11))
+        # self.opnsave.clicked.connect(self.save)
+
 
         self.text = QPlainTextEdit(self)
         self.text.move(20, 20)
         self.text.resize(530, 270)
         self.text.setReadOnly(True)
-        self.text.setFont(QFont("PSG Font", 10))
+        self.text.setFont(QFont("PSG Font", 11))
         self.text.setStyleSheet("background: rgba(255, 255, 255, 0.9);")
 
         self.player_data = QPlainTextEdit(self)
         self.player_data.move(560, 300)
-        self.player_data.resize(220, 130)
+        self.player_data.resize(220, 110)
         self.player_data.setReadOnly(True)
         self.player_data.setFont(QFont("PSG Font", 10))
         self.player_data.setStyleSheet("background: rgba(238, 238, 238, 0.97);\
@@ -50,6 +63,8 @@ class SceneInterface(QMainWindow):
         self.name_player.setStyleSheet("background: rgba(255, 255, 255, 0.90);\
                                         border:none;\
                                         padding-left: 5px;")
+
+
 
         self.img = QLabel(self)
         self.img.resize(220, 220)
@@ -71,6 +86,9 @@ class SceneInterface(QMainWindow):
             button.clicked.connect(self.getKeyButtonSubmited)
             self.btn_layout.addWidget(button)
             self.buttons += [button]
+
+    def getNameUser(self):
+        return self.name_player.text()
 
     def initButtons(self, names):
         while len(names) < 4:
@@ -105,7 +123,6 @@ class SceneInterface(QMainWindow):
 
     def getKeyButtonSubmited(self):
         self.submitted(self.sender().text())
-        print("asdf")
 
     def update(self, name="", text="", user="", image="", pldata="", buttons=[], user_disabled=True):
         self.initNameScene(name)
@@ -118,35 +135,7 @@ class SceneInterface(QMainWindow):
 
 
     def submitted(self, variant):
-        ways = {"1 2": "Создатели", "1 3": "Помощь", "1 4": "Начать игру", "1 0": "Выход"} # Это как-то должно здесь оказаться
+        ways = quest.data["ways"]
         for key, value in ways.items():
             if value == variant:
-                # Здесь вызывается функция f(key), которая подготавливая новые данные обновляет сцену
-                self.update(name="Scene2",
-                          text="This is simple text forever2",
-                          user="user123",
-                          image="img.jpg",
-                          pldata="DataPlayer2",
-                          buttons=["Создатели", "Помощь"],
-                          user_disabled=True)
-                return key
-
-
-app = QApplication(sys.argv)
-ex = SceneInterface()
-ex.setFixedSize(800, 500)
-ex.update(name="Scene",
-       text="This is simple text forever",
-       user="user123",
-       image="img.jpg",
-       pldata="DataPlayer",
-       buttons=["Создатели", "Помощь", "Начать игру", "Выход"],
-       user_disabled=False)
-
-pygame.mixer.init()
-pygame.mixer.music.load('Quest Theme.mp3')
-pygame.mixer.music.play(-1)
-
-ex.show()
-sys.exit(app.exec_())
-
+                quest.user_move(key)

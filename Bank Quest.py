@@ -2,10 +2,14 @@ import sys
 import pygame
 from PyQt5.QtCore import QSize, QStringListModel
 from PyQt5.QtWidgets import QApplication, QPushButton, QLabel, QPlainTextEdit, QVBoxLayout
-from PyQt5.QtWidgets import QMainWindow, QTableWidget, QWidget, QLineEdit
+from PyQt5.QtWidgets import QMainWindow, QTableWidget, QWidget, QLineEdit, QMessageBox
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.Qt import QHBoxLayout, QSpacerItem, QSizePolicy
 from json import loads
+import time
+import datetime
+from tests import Tester
+from room import SceneInterface
 
 
 class SceneInterface(QMainWindow):
@@ -19,14 +23,27 @@ class SceneInterface(QMainWindow):
 
         self.exit = QPushButton('Выход', self)
         self.exit.resize(105, 40)
-        self.exit.move(675, 455)
+        self.exit.move(675, 457)
         self.exit.setFont(QFont("PSG Font", 11))
         self.exit.clicked.connect(self.close)
 
         self.restart = QPushButton('Рестарт', self)
-        self.restart.resize(105, 40)
-        self.restart.move(560, 455)
+        self.restart.resize(110, 40)
+        self.restart.move(560, 457)
         self.restart.setFont(QFont("PSG Font", 11))
+
+        self.opnsave = QPushButton('Открыть', self)
+        self.opnsave.resize(105, 40)
+        self.opnsave.move(675, 415)
+        self.opnsave.setFont(QFont("PSG Font", 11))
+        # self.opnsave.clicked.connect(self.opensave)
+
+        self.savebtn = QPushButton('Сохранить', self)
+        self.savebtn.resize(110, 40)
+        self.savebtn.move(560, 415)
+        self.savebtn.setFont(QFont("PSG Font", 11))
+        # self.opnsave.clicked.connect(self.save)
+
 
         self.text = QPlainTextEdit(self)
         self.text.move(20, 20)
@@ -37,9 +54,9 @@ class SceneInterface(QMainWindow):
 
         self.player_data = QPlainTextEdit(self)
         self.player_data.move(560, 300)
-        self.player_data.resize(220, 130)
+        self.player_data.resize(220, 110)
         self.player_data.setReadOnly(True)
-        self.player_data.setFont(QFont("PSG Font", 11))
+        self.player_data.setFont(QFont("PSG Font", 10))
         self.player_data.setStyleSheet("background: rgba(238, 238, 238, 0.97);\
                                         border:none;")
 
@@ -50,6 +67,8 @@ class SceneInterface(QMainWindow):
         self.name_player.setStyleSheet("background: rgba(255, 255, 255, 0.90);\
                                         border:none;\
                                         padding-left: 5px;")
+
+
 
         self.img = QLabel(self)
         self.img.resize(220, 220)
@@ -71,6 +90,9 @@ class SceneInterface(QMainWindow):
             button.clicked.connect(self.getKeyButtonSubmited)
             self.btn_layout.addWidget(button)
             self.buttons += [button]
+
+    def getNameUser(self):
+        return self.name_player.text()
 
     def initButtons(self, names):
         while len(names) < 4:
@@ -118,22 +140,21 @@ class SceneInterface(QMainWindow):
 
     def submitted(self, variant):
         ways = quest.data["ways"]
+        name = self.getNameUser()
         for key, value in ways.items():
             if value == variant:
-                """# Здесь вызывается функция f(key), которая подготавливая новые данные обновляет сцену
-                self.update(name="Scene2",
-                          text="This is simple text forever2",
-                          user="user123",
-                          image="img.jpg",
-                          pldata="DataPlayer2",
-                          buttons=["Создатели", "Помощь"],
-                          user_disabled=True)"""
+                if key == "1 4" and not name:
+                    QMessageBox.about(self, "Ошибка!", "Введите пожалуйста имя.")
+                    return
                 quest.user_move(key)
+                self.name_player.setText(name)
+
 
 
 class Quest:
 
     def __init__(self, name):
+        self.game_time = 0
         self.player = name
         self.properties = {}
         self.state = []
@@ -147,23 +168,70 @@ class Quest:
         self.create_ways()
         self.default_properties()
 
-        buttons = list(map(lambda hall: hall.text, self.find_active_ways()))
-        ex.update(buttons=buttons)
-
     def create_rooms(self):
         self.rooms = {}
         room_names, room_text = (self.data["room_names"],
                                  self.data["room_text"])
         for i in range(len(room_names)):
-            i = i + 1
             room = Room(room_names[str(i)], room_text[str(i)],
                         "img.jmg", i)
             self.rooms[str(i)] = room
 
+
     def user_move(self, way):
+        self.eventlistener(self.ways[way].room_to.index)
         print(self.ways[way].room_to.index)
+        if way == "1 4":
+            self.player = ex.name_player.text()
+            ex.update(user_disabled=True)
+        elif way == "1 0":
+            ex.close()
+        elif way.endswith(" 1"):
+            self.default_properties()
+        elif way == "10 12":
+            self.properties["john_percent"] = 1
+        elif way == "10 11":
+            self.properties["john_percent"] = 2
+        elif way == "15 16":
+            self.properties["emmet_percent"] = 1
+        elif way == "15 17":
+            self.properties["emmet_percent"] = 2
+        elif way == "24 25":
+            self.properties["smith_percent"] = 1
+        elif way == "24 26":
+            self.properties["smith_percent"] = 2
+        elif way == "20 21":
+            self.properties["alcohol"] = 1
+        elif way == "20 22":
+            self.properties["alcohol"] = 2
+        elif way == "20 23":
+            self.properties["alcohol"] = 3
+        elif way == "10 13":
+            self.properties["emmet_know"] = True
+        elif way == "15 18":
+            self.properties["smith_know"] = True
+        elif way == "5 27":
+            self.properties["rob_begin"] = True
+        elif way == "40 20":
+            self.properties["james_meet"] = 1
+        elif way == "42 14":
+            self.properties["james_meet"] = 2
         room_into = self.ways[way].room_to.index
         self.change_room(str(room_into))
+
+
+    def eventlistener(self, scene):
+        if scene == 1:
+            self.game_time = 0
+        elif scene == 4:
+            self.game_time = time.time()
+        elif scene == 38:
+            self.game_time = time.time() - self.game_time
+            self.save(self.player, self.game_time)
+
+    def save(self, name, time):
+        with open("records.txt", mode="w", encoding="utf-8") as file:
+            file.write("{name} {time}\n".format(name=name, time=int(time)))
 
     def change_room(self, index):
         if index == "0":
@@ -174,12 +242,16 @@ class Quest:
     def update_room(self):
         room = self.current_room
         buttons = list(map(lambda hall: hall.text, self.find_active_ways()))
-        self.check_state()
+        if int(self.current_room.index) > 4:
+            self.check_state()
         state = "\n".join(self.state)
-        ex.update(text=room.text, buttons=buttons, pldata=state)
+        ex.update(text=room.text, buttons=buttons, pldata=state,
+                  user_disabled=False if self.current_room.index == 1 else True)
 
     def default_properties(self):
+        self.data = loads(open("bq_data.json", "r", encoding="utf-8").read())
         self.properties = self.data["flags"]
+        self.state = []
 
     def create_ways(self):
         self.ways = {}
@@ -196,7 +268,79 @@ class Quest:
         active_ways = []
         for way in self.ways.values():
             if way.room_from.index == self.current_room.index:
-                active_ways += [way]
+                if (way.name == "5 27" and
+                        self.properties["smith_percent"] == 0):
+                    pass
+                elif (way.name == "7 14" and
+                      not self.properties["emmet_know"]):
+                    pass
+                elif (way.name == "8 20" and
+                      not self.properties["smith_know"]):
+                    pass
+                elif (way.name == "10 13" and
+                      (self.properties["john_percent"] == 0 or
+                       self.properties["emmet_know"])):
+                    pass
+                elif (way.name == "10 11" and
+                      self.properties["john_percent"] != 0):
+                    pass
+                elif (way.name == "10 12" and
+                      self.properties["john_percent"] != 0):
+                    pass
+                elif (way.name == "15 18" and
+                      (self.properties["emmet_percent"] == 0 or
+                       self.properties["smith_know"])):
+                    pass
+                elif (way.name == "15 16" and
+                      self.properties["emmet_percent"] != 0):
+                    pass
+                elif (way.name == "15 17" and
+                      self.properties["emmet_percent"] != 0):
+                    pass
+                elif (way.name == "24 25" and
+                      self.properties["smith_percent"] != 0):
+                    pass
+                elif (way.name == "24 26" and
+                      self.properties["smith_percent"] != 0):
+                    pass
+                elif (way.name == "20 21" and
+                      self.properties["alcohol"] != 0):
+                    pass
+                elif (way.name == "20 22" and
+                      self.properties["alcohol"] != 1):
+                    pass
+                elif (way.name == "20 23" and
+                      self.properties["alcohol"] != 2):
+                    pass
+                elif (way.name == "28 29" and
+                      self.properties["smith_percent"] != 1):
+                    pass
+                elif (way.name == "28 30" and
+                      self.properties["smith_percent"] != 2):
+                    pass
+                elif (way.name == "33 34" and
+                      self.properties["emmet_percent"] != 1):
+                    pass
+                elif (way.name == "33 35" and
+                      self.properties["emmet_percent"] != 2):
+                    pass
+                elif (way.name == "35 36" and
+                      self.properties["john_percent"] != 1):
+                    pass
+                elif (way.name == "35 38" and
+                      self.properties["john_percent"] != 2):
+                    pass
+                elif (way.name == "20 40" and
+                      self.properties["james_meet"] != 0):
+                    pass
+                elif (way.name == "27 44" and
+                      self.properties["james_meet"] != 2):
+                    pass
+                elif (way.name == "33 46" and
+                      self.properties["james_meet"] != 2):
+                    pass
+                else:
+                    active_ways += [way]
         return active_ways
 
     def check_state(self):
@@ -204,12 +348,27 @@ class Quest:
         self.state += [self.data["states"]["current_task"]]
         if self.properties["john_percent"] == 0:
             self.state += [self.data["states"]["go_to_john"]]
+        elif not self.properties["emmet_know"]:
+            self.state += [self.data["states"]["ask_about_emmet"]]
         elif self.properties["emmet_percent"] == 0:
             self.state += [self.data["states"]["go_to_emmet"]]
+        elif not self.properties["smith_know"]:
+            self.state += [self.data["states"]["ask_about_smith"]]
         elif self.properties["smith_percent"] == 0:
             self.state += [self.data["states"]["go_to_smith"]]
-        else:
+        elif not self.properties["rob_begin"]:
             self.state += [self.data["states"]["go_to_home"]]
+        else:
+            self.state += [self.data["states"]["rob_a_bank"]]
+        self.state[-1] += "\n"
+        if self.properties["james_meet"] == 2:
+            self.state += [self.data["states"]["sewage_plan"]]
+        if self.properties["alcohol"] == 1:
+            self.state += [self.data["states"]["some_alcohol"]]
+        elif self.properties["alcohol"] == 2:
+            self.state += [self.data["states"]["much_alcohol"]]
+        elif self.properties["alcohol"] == 3:
+            self.state += [self.data["states"]["too_much_alcohol"]]
         if self.properties["john_percent"] != 0:
             self.state += [self.data["states"]["john_in_band"]]
         if self.properties["john_percent"] == 1:
@@ -258,13 +417,6 @@ class Example(QWidget):
 app = QApplication(sys.argv)
 ex = SceneInterface()
 ex.setFixedSize(800, 500)
-"""ex.update(name="Scene",
-       text="This is simple text forever",
-       user="user123",
-       image="img.jpg",
-       pldata="DataPlayer",
-       buttons=["Создатели", "Помощь", "Начать игру", "Выход"],
-       user_disabled=False)"""
 
 pygame.mixer.init()
 pygame.mixer.music.load('Quest Theme.mp3')
@@ -272,7 +424,11 @@ pygame.mixer.music.play(-1)
 
 ex.show()
 
-quest = Quest("name")
+quest = Quest(ex.getNameUser())
 quest.change_room("1")
+
+
+start = datetime.datetime.now()
+
 
 sys.exit(app.exec())
