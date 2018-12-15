@@ -2,10 +2,12 @@ import sys
 import pygame
 from PyQt5.QtCore import QSize, QStringListModel
 from PyQt5.QtWidgets import QApplication, QPushButton, QLabel, QPlainTextEdit, QVBoxLayout
-from PyQt5.QtWidgets import QMainWindow, QTableWidget, QWidget, QLineEdit
+from PyQt5.QtWidgets import QMainWindow, QTableWidget, QWidget, QLineEdit, QMessageBox
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.Qt import QHBoxLayout, QSpacerItem, QSizePolicy
 from json import loads
+import time
+import datetime
 
 
 class SceneInterface(QMainWindow):
@@ -19,14 +21,27 @@ class SceneInterface(QMainWindow):
 
         self.exit = QPushButton('Выход', self)
         self.exit.resize(105, 40)
-        self.exit.move(675, 455)
+        self.exit.move(675, 457)
         self.exit.setFont(QFont("PSG Font", 11))
         self.exit.clicked.connect(self.close)
 
         self.restart = QPushButton('Рестарт', self)
-        self.restart.resize(105, 40)
-        self.restart.move(560, 455)
+        self.restart.resize(110, 40)
+        self.restart.move(560, 457)
         self.restart.setFont(QFont("PSG Font", 11))
+        self.restart.clicked.connect(self.restart_quest)
+
+        self.opnsave = QPushButton('Открыть', self)
+        self.opnsave.resize(105, 40)
+        self.opnsave.move(675, 415)
+        self.opnsave.setFont(QFont("PSG Font", 11))
+        # self.opnsave.clicked.connect(self.opensave)
+
+        self.savebtn = QPushButton('Сохранить', self)
+        self.savebtn.resize(110, 40)
+        self.savebtn.move(560, 415)
+        self.savebtn.setFont(QFont("PSG Font", 11))
+        # self.opnsave.clicked.connect(self.save)
 
         self.text = QPlainTextEdit(self)
         self.text.move(20, 20)
@@ -37,9 +52,9 @@ class SceneInterface(QMainWindow):
 
         self.player_data = QPlainTextEdit(self)
         self.player_data.move(560, 300)
-        self.player_data.resize(220, 130)
+        self.player_data.resize(220, 110)
         self.player_data.setReadOnly(True)
-        self.player_data.setFont(QFont("PSG Font", 11))
+        self.player_data.setFont(QFont("PSG Font", 10))
         self.player_data.setStyleSheet("background: rgba(238, 238, 238, 0.97);\
                                         border:none;")
 
@@ -58,7 +73,8 @@ class SceneInterface(QMainWindow):
         self.layout = QVBoxLayout(self)
 
         self.btn_layout = QHBoxLayout(self)
-        self.btn_layout.addItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
+        self.btn_layout.addItem(
+            QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
         self.layout.addLayout(self.btn_layout)
 
         self.buttons = []
@@ -72,6 +88,9 @@ class SceneInterface(QMainWindow):
             self.btn_layout.addWidget(button)
             self.buttons += [button]
 
+    def getNameUser(self):
+        return self.name_player.text()
+
     def initButtons(self, names):
         while len(names) < 4:
             names += [""]
@@ -79,11 +98,12 @@ class SceneInterface(QMainWindow):
             self.buttons[i].setText(names[i])
             if names[i]:
                 self.buttons[i].setEnabled(True)
-                self.buttons[i].setStyleSheet("background: rgba(236, 236, 236, 0.7);")
+                self.buttons[i].setStyleSheet(
+                    "background: rgba(236, 236, 236, 0.7);")
             else:
                 self.buttons[i].setEnabled(False)
-                self.buttons[i].setStyleSheet("background: rgba(236, 236, 236, 0);")
-
+                self.buttons[i].setStyleSheet(
+                    "background: rgba(236, 236, 236, 0);")
 
     def initText(self, text):
         self.text.setPlainText(text)
@@ -106,7 +126,8 @@ class SceneInterface(QMainWindow):
     def getKeyButtonSubmited(self):
         self.submitted(self.sender().text())
 
-    def update(self, name="", text="", user="", image="", pldata="", buttons=[], user_disabled=True):
+    def update(self, name="", text="", user="", image="", pldata="", buttons=[],
+               user_disabled=True):
         self.initNameScene(name)
         self.initText(text)
         self.initButtons(buttons)
@@ -115,26 +136,27 @@ class SceneInterface(QMainWindow):
         self.initPlayerData(pldata)
         self.setNameUserMode(user_disabled)
 
-
     def submitted(self, variant):
         ways = quest.data["ways"]
+        name = self.getNameUser()
         for key, value in ways.items():
             if value == variant:
-                """# Здесь вызывается функция f(key), которая подготавливая новые данные обновляет сцену
-                self.update(name="Scene2",
-                          text="This is simple text forever2",
-                          user="user123",
-                          image="img.jpg",
-                          pldata="DataPlayer2",
-                          buttons=["Создатели", "Помощь"],
-                          user_disabled=True)"""
+                if key == "1 4" and not name:
+                    QMessageBox.about(self, "Ошибка!",
+                                      "Введите пожалуйста имя.")
+                    return
                 quest.user_move(key)
+                self.name_player.setText(name)
+
+    def restart_quest(self):
+        quest.restart()
 
 
 class Quest:
 
-    def __init__(self, name):
-        self.player = name
+    def __init__(self):
+        self.player = ""
+        self.money = 0
         self.properties = {}
         self.state = []
         self.rooms = {}
@@ -142,11 +164,11 @@ class Quest:
         self.data = {}
         self.data = loads(open("bq_data.json", "r", encoding="utf-8").read())
 
+        self.menu_rooms = self.data["menu_rooms"]
         self.create_rooms()
         self.current_room = self.rooms["1"]
         self.create_ways()
         self.default_properties()
-        ex.update(user_disabled=False)
 
     def create_rooms(self):
         self.rooms = {}
@@ -160,7 +182,7 @@ class Quest:
     def user_move(self, way):
         print(self.ways[way].room_to.index)
         if way == "1 4":
-            self.player = ex.name_player.text()
+            self.player = ex.getNameUser()
             ex.update(user_disabled=True)
         elif way == "1 0":
             ex.close()
@@ -194,6 +216,20 @@ class Quest:
             self.properties["james_meet"] = 1
         elif way == "42 14":
             self.properties["james_meet"] = 2
+        elif way == "27 43":
+            self.properties["entry"] = "wall"
+        elif way == "27 44":
+            self.properties["entry"] = "sewage"
+        elif way == "30 33":
+            self.properties["door"] = "boom"
+        elif way == "31 33":
+            self.properties["door"] = "puzzle"
+        elif way == "33 45":
+            self.properties["exit"] = "town"
+        elif way == "33 46":
+            self.properties["exit"] = "sewage"
+        elif way == "35 38":
+            self.calculate_money()
         room_into = self.ways[way].room_to.index
         self.change_room(str(room_into))
 
@@ -206,10 +242,17 @@ class Quest:
     def update_room(self):
         room = self.current_room
         buttons = list(map(lambda hall: hall.text, self.find_active_ways()))
-        if int(self.current_room.index) > 4:
-            self.check_state()
+        self.check_state()
         state = "\n".join(self.state)
-        ex.update(text=room.text, buttons=buttons, pldata=state)
+        text = room.text
+        if "{name}" in text:
+            text = text.replace("{name}", self.player)
+            print(text)
+        if "{money}" in text:
+            print(self.money)
+            text = text.replace("{money}", str(self.money))
+        ex.update(text=text, buttons=buttons, pldata=state,
+                 user_disabled=False if self.current_room.index == 1 else True)
 
     def default_properties(self):
         self.data = loads(open("bq_data.json", "r", encoding="utf-8").read())
@@ -308,6 +351,9 @@ class Quest:
 
     def check_state(self):
         self.state = []
+        if str(self.current_room.index) in self.menu_rooms:
+            print(self.current_room.index)
+            return
         self.state += [self.data["states"]["current_task"]]
         if self.properties["john_percent"] == 0:
             self.state += [self.data["states"]["go_to_john"]]
@@ -351,6 +397,34 @@ class Quest:
         elif self.properties["smith_percent"] == 2:
             self.state += [self.data["states"]["big_percent"]]
 
+    def restart(self):
+        if str(self.current_room.index) not in self.menu_rooms:
+            self.default_properties()
+            self.change_room("1")
+
+    def calculate_money(self):
+        money = 1000000
+        if self.properties["entry"] == "wall":
+            money *= 0.8
+        if self.properties["door"] == "boom":
+            money *= 0.8
+        if self.properties["exit"] == "town":
+            money *= 0.8
+        total = money
+        if self.properties["john_percent"] == 2:
+            money -= total * 0.2
+        elif self.properties["john_percent"] == 1:
+            money -= total * 0.07
+        if self.properties["emmet_percent"] == 2:
+            money -= total * 0.2
+        elif self.properties["emmet_percent"] == 1:
+            money -= total * 0.07
+        if self.properties["smith_percent"] == 2:
+            money -= total * 0.2
+        elif self.properties["smith_percent"] == 1:
+            money -= total * 0.07
+        self.money = money
+
 
 class Room:
 
@@ -370,23 +444,48 @@ class Hall:
         self.text = text
 
 
-class Example(QWidget):
+class Tester:
 
-    def __init__(self):
-        super().__init__()
-        self.plain = QPlainTextEdit(self)
-        self.show()
+    def __init__(self, data):
+        self.ways = data["ways"]
+        self.room_names = data["room_names"]
+        self.room_text = data["room_text"]
+
+    def test_ways(self):
+        fr, to = [], []
+        for way in self.ways:
+            fr.append(way.split()[0])
+            to.append(way.split()[1])
+        for element in to:
+            if int(element):
+                assert element in fr
+
+    def test_is_set_scene(self):
+        for code in self.room_names:
+            assert self.room_names[code]
+
+    def test_is_set_description_scene(self):
+        for code in self.room_text:
+            assert self.room_text[code]
+
+    def test_count_scenes(self):
+        rooms_names = []
+        for code in self.room_names:
+            rooms_names.append(code)
+        room_text = []
+        for code in self.room_text:
+            room_text.append(code)
+        assert len(rooms_names) == len(room_text)
+        room_text = list(map(int, room_text))
+        rooms_names = list(map(int, rooms_names))
+        rooms_names.sort()
+        room_text.sort()
+        assert rooms_names == room_text
+
 
 app = QApplication(sys.argv)
 ex = SceneInterface()
 ex.setFixedSize(800, 500)
-"""ex.update(name="Scene",
-       text="This is simple text forever",
-       user="user123",
-       image="img.jpg",
-       pldata="DataPlayer",
-       buttons=["Создатели", "Помощь", "Начать игру", "Выход"],
-       user_disabled=False)"""
 
 pygame.mixer.init()
 pygame.mixer.music.load('Quest Theme.mp3')
@@ -394,7 +493,7 @@ pygame.mixer.music.play(-1)
 
 ex.show()
 
-quest = Quest("name")
+quest = Quest()
 quest.change_room("1")
 
 sys.exit(app.exec())
