@@ -223,9 +223,12 @@ class Quest:
             self.game_time = time.time()
 
     def save(self):
-        with open("{}.json".format(ex.get_name_user()), mode="r+", encoding="utf-8") as file:
-            self.properties["time"] = self.game_time = time.time() - self.game_time
+        self.properties["time"] = self.game_time = time.time() - self.game_time
+        with open("saves/{}.json".format(ex.get_name_user()), mode="w", encoding="utf-8") as file:
             file.write(dumps(self.properties) + "\n")
+
+    def load(self):
+        self.properties = loads(open("{}".format(ex.get_name_user()), "r", encoding="utf-8").read())
 
     def change_room(self, index):
         if index == "0":
@@ -420,6 +423,7 @@ ex.show()
 
 quest = Quest()
 quest.change_room("1")
+
 
 # t = Tester(quest.data)
 # t.test_isset_scene(200)
