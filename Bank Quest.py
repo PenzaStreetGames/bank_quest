@@ -8,10 +8,13 @@ from PyQt5.Qt import QHBoxLayout, QSpacerItem, QSizePolicy
 from json import loads, dumps
 import time
 import datetime
+from random import random
 
 
 class SceneInterface(QMainWindow):
+    """Класс интерфейса квеста"""
     def __init__(self):
+        """Инициализация интерфейса"""
         super().__init__()
 
         self.bg = QLabel(self)
@@ -35,13 +38,13 @@ class SceneInterface(QMainWindow):
         self.opnsave.resize(105, 40)
         self.opnsave.move(135, 510)
         self.opnsave.setFont(QFont("PSG Font", 11))
-        # self.opnsave.clicked.connect(self.opensave)
+        self.opnsave.clicked.connect(self.load_quest)
 
         self.savebtn = QPushButton('Сохранить', self)
         self.savebtn.resize(110, 40)
         self.savebtn.move(20, 510)
         self.savebtn.setFont(QFont("PSG Font", 11))
-        # self.opnsave.clicked.connect(self.save)
+        self.savebtn.clicked.connect(self.save_quest)
 
         self.text = QPlainTextEdit(self)
         self.text.move(20, 20)
@@ -52,11 +55,11 @@ class SceneInterface(QMainWindow):
 
         self.player_data = QPlainTextEdit(self)
         self.player_data.move(560, 300)
-        self.player_data.resize(220, 110)
+        self.player_data.resize(220, 175)
         self.player_data.setReadOnly(True)
-        self.player_data.setFont(QFont("PSG Font", 10))
+        self.player_data.setFont(QFont("PSG Font", 11))
         self.player_data.setStyleSheet("background: rgba(238, 238, 238, 0.97);\
-                                        border:none;")
+                                                border:none;")
 
         self.name_player = QLineEdit(self)
         self.name_player.setPlaceholderText("Введите имя...")
@@ -85,14 +88,16 @@ class SceneInterface(QMainWindow):
             button.setFont(QFont("PSG Font", 11))
             button.setStyleSheet("background: rgba(236, 236, 236, 0.7);")
             button.move(20, (45 * btn) + 300)
-            button.clicked.connect(self.getKeyButtonSubmited)
+            button.clicked.connect(self.get_key_button_submited)
             self.btn_layout.addWidget(button)
             self.buttons += [button]
 
-    def getNameUser(self):
+    def get_name_user(self):
+        """Возвращает имя игрока"""
         return self.name_player.text()
 
-    def initButtons(self, names):
+    def init_buttons(self, names):
+        """Иницилизация кнопок"""
         while len(names) < 4:
             names += [""]
         for i in range(4):
@@ -106,40 +111,49 @@ class SceneInterface(QMainWindow):
                 self.buttons[i].setStyleSheet(
                     "background: rgba(236, 236, 236, 0);")
 
-    def initText(self, text):
+    def init_text(self, text):
+        """Иницилизация текста на текущей сцене"""
         self.text.setPlainText(text)
 
-    def initImage(self, image):
+    def init_image(self, image):
+        """Иницилизация картинки сцены"""
         self.img.setPixmap(QPixmap(image))
 
-    def initPlayerData(self, data):
+    def init_player_data(self, data):
+        """Иницилизация характеристики игрока"""
         self.player_data.setPlainText(data)
 
-    def initNameScene(self, name):
+    def init_name_scene(self, name):
+        """Иницилизация имени сцены"""
         self.setWindowTitle(name)
 
-    def initNamePlayer(self, name):
+    def init_name_player(self, name):
+        """Иницилизация имени игрока"""
         self.name_player.setText(name)
 
-    def setNameUserMode(self, mode):
+    def set_name_user_mode(self, mode):
+        """Иницилизация редактируемости поля имени игрока"""
         self.name_player.setReadOnly(mode)
 
-    def getKeyButtonSubmited(self):
+    def get_key_button_submited(self):
+        """Какую из кнопок нажали"""
         self.submitted(self.sender().text())
 
     def update(self, name="", text="", user="", image="", pldata="", buttons=[],
                user_disabled=True):
-        self.initNameScene(name)
-        self.initText(text)
-        self.initButtons(buttons)
-        self.initNamePlayer(user)
-        self.initImage(image)
-        self.initPlayerData(pldata)
-        self.setNameUserMode(user_disabled)
+        """Обновление сцены"""
+        self.init_name_scene(name)
+        self.init_text(text)
+        self.init_buttons(buttons)
+        self.init_name_player(user)
+        self.init_image(image)
+        self.init_player_data(pldata)
+        self.set_name_user_mode(user_disabled)
 
     def submitted(self, variant):
+        """Обработка нажатия на кнопки"""
         ways = quest.data["ways"]
-        name = self.getNameUser()
+        name = self.get_name_user()
         for key, value in ways.items():
             if value == variant:
                 if key == "1 4" and not name:
@@ -150,12 +164,22 @@ class SceneInterface(QMainWindow):
                 self.name_player.setText(name)
 
     def restart_quest(self):
+        """Вызов рестарта у квеста"""
         quest.restart()
+
+    def save_quest(self):
+        """Сохранение квеста"""
+        quest.save()
+
+    def load_quest(self):
+        """Загрузка квеста"""
+        quest.load()
 
 
 class Quest:
-
+    """Класс системы комнат, переходов, и взамодействия между ними."""
     def __init__(self):
+        """Инициализация квеста"""
         self.player = ""
         self.money = 0
         self.game_time = 0
@@ -173,6 +197,7 @@ class Quest:
         self.default_properties()
 
     def create_rooms(self):
+        """Создаёт объекты класса Room и записывает их в словарь квеста"""
         self.rooms = {}
         room_names, room_text = (self.data["room_names"],
                                  self.data["room_text"])
@@ -182,18 +207,32 @@ class Quest:
             self.rooms[str(i)] = room
 
     def user_move(self, way):
+        """Вычисляет возможные изменения при переходе из одной комнаты
+        в другую"""
         print(self.ways[way].room_to.index)
+        value = random()
+        other_room = ""
+        if value < self.data["chances"]["random_die"]:
+            other_room = "51"
         if way == "1 4":
-            self.player = ex.getNameUser()
+            self.properties["player"] = ex.get_name_user()
+            self.properties["time"] = time.time()
             ex.update(user_disabled=True)
         elif way == "1 0":
             ex.close()
         elif way.endswith(" 1"):
+            self.save()
             self.default_properties()
         elif way == "10 12":
             self.properties["john_percent"] = 1
         elif way == "10 11":
             self.properties["john_percent"] = 2
+        elif way == "14 15":
+            if value < self.data["chances"]["dump_stay"]:
+                other_room = "14"
+        elif way == "14 7":
+            if value < self.data["chances"]["dump_stay"]:
+                other_room = "14"
         elif way == "15 16":
             self.properties["emmet_percent"] = 1
         elif way == "15 17":
@@ -220,10 +259,22 @@ class Quest:
             self.properties["james_meet"] = 2
         elif way == "27 43":
             self.properties["entry"] = "wall"
+            if (self.data["chances"]["boom_shot"][0] < value
+                    < self.data["chances"]["boom_shot"][1]):
+                other_room = "49"
+            elif (self.data["chances"]["boom_die"][0] < value
+                  < self.data["chances"]["boom_die"][1]):
+                other_room = "50"
         elif way == "27 44":
             self.properties["entry"] = "sewage"
         elif way == "30 33":
             self.properties["door"] = "boom"
+            if (self.data["chances"]["boom_shot"][0] < value
+                 < self.data["chances"]["boom_shot"][1]):
+                other_room = "49"
+            elif (self.data["chances"]["boom_die"][0] < value
+                  < self.data["chances"]["boom_die"][1]):
+                other_room = "50"
         elif way == "31 33":
             self.properties["door"] = "puzzle"
         elif way == "33 45":
@@ -232,53 +283,83 @@ class Quest:
             self.properties["exit"] = "sewage"
         elif way == "35 38":
             self.calculate_money()
-        room_into = self.ways[way].room_to.index
+        if other_room == "":
+            room_into = self.ways[way].room_to.index
+        else:
+            room_into = other_room
         self.change_room(str(room_into))
 
-    def eventlistener(self, scene):
-        print(scene)
-        if scene == 1:
-            self.game_time = 0
-        elif scene == 4:
-            self.game_time = time.time()
-
     def save(self):
-        self.properties["time"] = self.game_time = time.time() - self.game_time
+        self.properties["time"] = time.time() - self.properties["time"]
+        self.properties["current_room"] = str(self.current_room.index)
+        self.write_ending()
         with open("saves/{}.json".format(ex.get_name_user()), mode="w",
                   encoding="utf-8") as file:
             file.write(dumps(self.properties) + "\n")
 
     def load(self):
         self.properties = loads(
-            open("{}".format(ex.get_name_user()), "r", encoding="utf-8").read())
+            open("saves/{}.json".format(ex.get_name_user()), "r",
+                 encoding="utf-8").read())
+        self.change_room(self.properties["current_room"])
+
+    def write_ending(self):
+        """Определяет концовку игрока"""
+        room = str(self.current_room.index)
+        if room == "23":
+            self.properties["end"] = "too_many_drink"
+        elif room == "39":
+            self.properties["end"] = "no_play"
+        elif room == "49":
+            self.properties["end"] = "boom_shot"
+        elif room == "50":
+            self.properties["end"] = "boom_die"
+        elif room == "51":
+            self.properties["end"] = "random_die"
+        elif room == "29":
+            self.properties["end"] = "bad_explosive"
+        elif room == "34":
+            self.properties["end"] = "bad_weapon"
+        elif room == "36":
+            self.properties["end"] = "john_kill"
+        elif room == "37":
+            self.properties["end"] = "band_kill"
+        elif room == "32" or room == "47" or room == "48":
+            self.properties["end"] = "wrong_answer"
+        else:
+            self.properties["end"] = "in_process"
 
     def change_room(self, index):
+        """Изменяет текущую комнату"""
         if index == "0":
             ex.close()
         self.current_room = self.rooms[index]
         self.update_room()
 
     def update_room(self):
+        """Обновляет комнату при переходе, меняя отображение интерфейса"""
         room = self.current_room
         buttons = list(map(lambda hall: hall.text, self.find_active_ways()))
         self.check_state()
         state = "\n".join(self.state)
         text = room.text
         if "{name}" in text:
-            text = text.replace("{name}", self.player)
-            print(text)
+            text = text.replace("{name}", self.properties["player"])
         if "{money}" in text:
-            print(self.money)
             text = text.replace("{money}", str(self.money))
         ex.update(text=text, buttons=buttons, pldata=state, image=room.image,
-                  user_disabled=False if self.current_room.index == 1 else True)
+                  user_disabled=False if str(self.current_room.index)
+                  in self.menu_rooms else True)
+        ex.name_player.setText(self.properties["player"])
 
     def default_properties(self):
+        """Устанавливает все настройки пользователя в значение по умолчанию"""
         self.data = loads(open("bq_data.json", "r", encoding="utf-8").read())
         self.properties = self.data["flags"]
         self.state = []
 
     def create_ways(self):
+        """Создаёт объекты класса Hall и записывает их в словарь квеста"""
         self.ways = {}
         way_items = list(self.data["ways"].items())
         for i in range(len(way_items)):
@@ -290,6 +371,7 @@ class Quest:
             self.ways[way_name] = Hall(way_name, room_from, room_into, text)
 
     def find_active_ways(self):
+        """Определяет доступные в данной комнате в данный момент переходы"""
         active_ways = []
         for way in self.ways.values():
             if way.room_from.index == self.current_room.index:
@@ -369,6 +451,7 @@ class Quest:
         return active_ways
 
     def check_state(self):
+        """Составляет текст о текущем состоянии игрока и игровых событиях"""
         self.state = []
         if str(self.current_room.index) in self.menu_rooms:
             print(self.current_room.index)
@@ -417,11 +500,15 @@ class Quest:
             self.state += [self.data["states"]["big_percent"]]
 
     def restart(self):
+        """Возвращает игрока в начало квеста, обнуляя игровые события"""
         if str(self.current_room.index) not in self.menu_rooms:
+            name = self.properties["player"]
             self.default_properties()
-            self.change_room("1")
+            self.properties["player"] = name
+            self.change_room("4")
 
     def calculate_money(self):
+        """Рассчитывает итоговый заработок игрока"""
         money = 1000000
         if self.properties["entry"] == "wall":
             money *= 0.8
@@ -446,8 +533,9 @@ class Quest:
 
 
 class Room:
-
+    """Класс комнаты - места, описывающего текущее положение игрока"""
     def __init__(self, name, text, image, index):
+        """Инициализация комнаты"""
         self.name = name
         self.text = text
         self.image = image
@@ -455,8 +543,9 @@ class Room:
 
 
 class Hall:
-
+    """Класс перехода - связи между двумя комнатами, доступной пользователю"""
     def __init__(self, name, room_from, room_to, text):
+        """Описание перехода"""
         self.room_from = room_from
         self.room_to = room_to
         self.name = name
@@ -464,13 +553,15 @@ class Hall:
 
 
 class Tester:
-
+    """Класс тестирующий систему квеста"""
     def __init__(self, data):
+        """Инициализация тестировщика"""
         self.ways = data["ways"]
         self.room_names = data["room_names"]
         self.room_text = data["room_text"]
 
-    def test_ways(self):
+    def test_ways_room_have_exits(self):
+        """Каждая комната имеет выходы из неё"""
         fr, to = [], []
         for way in self.ways:
             fr.append(way.split()[0])
@@ -479,15 +570,33 @@ class Tester:
             if int(element):
                 assert element in fr
 
-    def test_is_set_scene(self):
-        for code in self.room_names:
-            assert self.room_names[code]
+    def test_isset_scene(self, scene_index):
+        """Вспомогательная функция"""
+        assert str(scene_index) in self.room_names.keys()
 
-    def test_is_set_description_scene(self):
+    def test_all_rooms_in_ways_isset(self):
+        """Все комнаты, указанные в путях, существуют"""
+        fr, to = [], []
+        for way in self.ways:
+            fr.append(way.split()[0])
+            to.append(way.split()[1])
+        all = fr + to
+        for room in all:
+            self.test_isset_scene(room)
+
+    def test_isset_scene_name(self):
+        """Есть ли имя у сцены"""
+        for code in self.room_names:
+             assert self.room_names[code]
+
+
+    def test_isset_description_scene(self):
+        """Есть ли описание у сцены"""
         for code in self.room_text:
-            assert self.room_text[code]
+             assert self.room_text[code]
 
     def test_count_scenes(self):
+        """Совпадают количества описаний сцен"""
         rooms_names = []
         for code in self.room_names:
             rooms_names.append(code)
