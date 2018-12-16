@@ -85,14 +85,15 @@ class SceneInterface(QMainWindow):
             button.setFont(QFont("PSG Font", 11))
             button.setStyleSheet("background: rgba(236, 236, 236, 0.7);")
             button.move(20, (45 * btn) + 300)
-            button.clicked.connect(self.getKeyButtonSubmited)
+            button.clicked.connect(self.get_key_button_submited)
             self.btn_layout.addWidget(button)
             self.buttons += [button]
 
     def get_name_user(self):
         return self.name_player.text()
 
-    def initButtons(self, names):
+    def init_buttons(self, names):
+        """Иницилизация кнопок"""
         while len(names) < 4:
             names += [""]
         for i in range(4):
@@ -105,38 +106,47 @@ class SceneInterface(QMainWindow):
                 self.buttons[i].setStyleSheet("background: rgba(236, 236, 236, 0);")
 
 
-    def initText(self, text):
+    def init_text(self, text):
+        """Иницилизация текста на текущей сцене"""
         self.text.setPlainText(text)
 
-    def initImage(self, image):
+    def init_image(self, image):
+        """Иницилизация картинки сцены"""
         self.img.setPixmap(QPixmap(image))
 
-    def initPlayerData(self, data):
+    def init_player_data(self, data):
+        """Иницилизация характеристики игрока"""
         self.player_data.setPlainText(data)
 
-    def initNameScene(self, name):
+    def init_name_scene(self, name):
+        """Иницилизация имени сцены"""
         self.setWindowTitle(name)
 
-    def initNamePlayer(self, name):
+    def init_name_player(self, name):
+        """Иницилизация имени игрока"""
         self.name_player.setText(name)
 
-    def setNameUserMode(self, mode):
+    def set_name_user_mode(self, mode):
+        """Иницилизация редактируемости поля имени игрока"""
         self.name_player.setReadOnly(mode)
 
-    def getKeyButtonSubmited(self):
+    def get_key_button_submited(self):
+        """Какую из кнопок нажали"""
         self.submitted(self.sender().text())
 
     def update(self, name="", text="", user="", image="", pldata="", buttons=[], user_disabled=True):
-        self.initNameScene(name)
-        self.initText(text)
-        self.initButtons(buttons)
-        self.initNamePlayer(user)
-        self.initImage(image)
-        self.initPlayerData(pldata)
-        self.setNameUserMode(user_disabled)
+        """Обновление сцены"""
+        self.init_name_scene(name)
+        self.init_text(text)
+        self.init_buttons(buttons)
+        self.init_name_player(user)
+        self.init_image(image)
+        self.init_player_data(pldata)
+        self.set_name_user_mode(user_disabled)
 
 
     def submitted(self, variant):
+        """Обработка нажатия на кнопки"""
         ways = quest.data["ways"]
         name = self.get_name_user()
         for key, value in ways.items():

@@ -29,15 +29,18 @@ class Tester:
             self.test_isset_scene(room)
 
     def test_isset_scene_name(self):
+        """Есть ли имя у сцены"""
         for code in self.room_names:
              assert self.room_names[code]
 
 
     def test_isset_description_scene(self):
+        """Есть ли описание у сцены"""
         for code in self.room_text:
              assert self.room_text[code]
 
     def test_count_scenes(self):
+        """Совпадают количества описаний сцен"""
         rooms_names = []
         for code in self.room_names:
             rooms_names.append(code)
