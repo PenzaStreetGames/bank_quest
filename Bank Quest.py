@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QApplication, QPushButton, QLabel, QPlainTextEdit, Q
 from PyQt5.QtWidgets import QMainWindow, QTableWidget, QWidget, QLineEdit, QMessageBox
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.Qt import QHBoxLayout, QSpacerItem, QSizePolicy
-from json import loads
+from json import loads, dumps
 import time
 import datetime
 
@@ -17,29 +17,29 @@ class SceneInterface(QMainWindow):
         self.bg = QLabel(self)
         self.bg.move(0, 0)
         self.bg.setPixmap(QPixmap("bg.jpg"))
-        self.bg.resize(800, 500)
+        self.bg.resize(800, 560)
 
         self.exit = QPushButton('Выход', self)
         self.exit.resize(105, 40)
-        self.exit.move(675, 457)
+        self.exit.move(675, 510)
         self.exit.setFont(QFont("PSG Font", 11))
         self.exit.clicked.connect(self.close)
 
         self.restart = QPushButton('Рестарт', self)
         self.restart.resize(110, 40)
-        self.restart.move(560, 457)
+        self.restart.move(560, 510)
         self.restart.setFont(QFont("PSG Font", 11))
         self.restart.clicked.connect(self.restart_quest)
 
-        self.opnsave = QPushButton('Открыть', self)
+        self.opnsave = QPushButton('Загрузить', self)
         self.opnsave.resize(105, 40)
-        self.opnsave.move(675, 415)
+        self.opnsave.move(135, 510)
         self.opnsave.setFont(QFont("PSG Font", 11))
         # self.opnsave.clicked.connect(self.opensave)
 
         self.savebtn = QPushButton('Сохранить', self)
         self.savebtn.resize(110, 40)
-        self.savebtn.move(560, 415)
+        self.savebtn.move(20, 510)
         self.savebtn.setFont(QFont("PSG Font", 11))
         # self.opnsave.clicked.connect(self.save)
 
@@ -59,12 +59,13 @@ class SceneInterface(QMainWindow):
                                         border:none;")
 
         self.name_player = QLineEdit(self)
+        self.name_player.setPlaceholderText("Введите имя...")
         self.name_player.resize(220, 44)
         self.name_player.move(560, 245)
         self.name_player.setFont(QFont("PSG Font", 11))
         self.name_player.setStyleSheet("background: rgba(255, 255, 255, 0.90);\
-                                        border:none;\
-                                        padding-left: 5px;")
+                                                border:none;\
+                                                padding-left: 5px;")
 
         self.img = QLabel(self)
         self.img.resize(220, 220)
@@ -157,6 +158,7 @@ class Quest:
     def __init__(self):
         self.player = ""
         self.money = 0
+        self.game_time = 0
         self.properties = {}
         self.state = []
         self.rooms = {}
@@ -176,7 +178,7 @@ class Quest:
                                  self.data["room_text"])
         for i in range(len(room_names)):
             room = Room(room_names[str(i)], room_text[str(i)],
-                        "img.jmg", i)
+                        "images/11.png", i)
             self.rooms[str(i)] = room
 
     def user_move(self, way):
@@ -233,6 +235,23 @@ class Quest:
         room_into = self.ways[way].room_to.index
         self.change_room(str(room_into))
 
+    def eventlistener(self, scene):
+        print(scene)
+        if scene == 1:
+            self.game_time = 0
+        elif scene == 4:
+            self.game_time = time.time()
+
+    def save(self):
+        self.properties["time"] = self.game_time = time.time() - self.game_time
+        with open("saves/{}.json".format(ex.get_name_user()), mode="w",
+                  encoding="utf-8") as file:
+            file.write(dumps(self.properties) + "\n")
+
+    def load(self):
+        self.properties = loads(
+            open("{}".format(ex.get_name_user()), "r", encoding="utf-8").read())
+
     def change_room(self, index):
         if index == "0":
             ex.close()
@@ -251,8 +270,8 @@ class Quest:
         if "{money}" in text:
             print(self.money)
             text = text.replace("{money}", str(self.money))
-        ex.update(text=text, buttons=buttons, pldata=state,
-                 user_disabled=False if self.current_room.index == 1 else True)
+        ex.update(text=text, buttons=buttons, pldata=state, image=room.image,
+                  user_disabled=False if self.current_room.index == 1 else True)
 
     def default_properties(self):
         self.data = loads(open("bq_data.json", "r", encoding="utf-8").read())
@@ -485,7 +504,7 @@ class Tester:
 
 app = QApplication(sys.argv)
 ex = SceneInterface()
-ex.setFixedSize(800, 500)
+ex.setFixedSize(800, 560)
 
 pygame.mixer.init()
 pygame.mixer.music.load('Quest Theme.mp3')
