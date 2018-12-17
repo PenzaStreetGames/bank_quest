@@ -1,5 +1,6 @@
 import sys
-import pygame
+from os import walk, getcwd
+from pygame import mixer
 from PyQt5.QtCore import QSize, QStringListModel
 from PyQt5.QtWidgets import QApplication, QPushButton, QLabel, QPlainTextEdit, QVBoxLayout
 from PyQt5.QtWidgets import QMainWindow, QTableWidget, QWidget, QLineEdit, QMessageBox
@@ -180,13 +181,12 @@ class Quest:
     """Класс системы комнат, переходов, и взамодействия между ними."""
     def __init__(self):
         """Инициализация квеста"""
-        self.player = ""
-        self.money = 0
-        self.game_time = 0
         self.properties = {}
         self.state = []
         self.rooms = {}
         self.ways = {}
+        self.users = {}
+        self.highscores = ""
         self.data = {}
         self.data = loads(open("bq_data.json", "r", encoding="utf-8").read())
 
@@ -212,7 +212,8 @@ class Quest:
         print(self.ways[way].room_to.index)
         value = random()
         other_room = ""
-        if value < self.data["chances"]["random_die"]:
+        if (value < self.data["chances"]["random_die"] and
+                str(self.current_room.index) not in self.menu_rooms):
             other_room = "51"
         if way == "1 4":
             self.properties["player"] = ex.get_name_user()
@@ -220,9 +221,20 @@ class Quest:
             ex.update(user_disabled=True)
         elif way == "1 0":
             ex.close()
-        elif way.endswith(" 1"):
+        elif way.endswith(" 1") and way.split()[0] not in self.menu_rooms:
             self.save()
             self.default_properties()
+        elif way == "1 3":
+            self.load_saves()
+        elif way == "3 52":
+            self.sort_by_name()
+            other_room = 3
+        elif way == "3 53":
+            self.sort_by_time()
+            other_room = 3
+        elif way == "3 54":
+            self.sort_by_score()
+            other_room = 3
         elif way == "10 12":
             self.properties["john_percent"] = 1
         elif way == "10 11":
@@ -326,6 +338,8 @@ class Quest:
             self.properties["end"] = "band_kill"
         elif room == "32" or room == "47" or room == "48":
             self.properties["end"] = "wrong_answer"
+        elif room == "38":
+            self.properties["end"] = "complete_rob"
         else:
             self.properties["end"] = "in_process"
 
@@ -333,6 +347,8 @@ class Quest:
         """Изменяет текущую комнату"""
         if index == "0":
             ex.close()
+        elif index == "3":
+            self.highscores = self.show_highscores()
         self.current_room = self.rooms[index]
         self.update_room()
 
@@ -346,7 +362,9 @@ class Quest:
         if "{name}" in text:
             text = text.replace("{name}", self.properties["player"])
         if "{money}" in text:
-            text = text.replace("{money}", str(self.money))
+            text = text.replace("{money}", str(self.properties["money"]))
+        if str(room.index) == "3":
+            text = self.highscores
         ex.update(text=text, buttons=buttons, pldata=state, image=room.image,
                   user_disabled=False if str(self.current_room.index)
                   in self.menu_rooms else True)
@@ -529,7 +547,62 @@ class Quest:
             money -= total * 0.2
         elif self.properties["smith_percent"] == 1:
             money -= total * 0.07
-        self.money = money
+        self.properties["money"] = money
+
+    def load_saves(self):
+        """Возвращает все сохранения, загруженные в словари из файлов"""
+        saves = []
+        for root, dirs, files in walk(getcwd() + "/saves"):
+            saves = files
+        users = []
+        for save in saves:
+            users += [loads(open(f"saves/{save}", "r",
+                                 encoding="utf-8").read())]
+        self.users = {}
+        for user in users:
+            self.users[user["player"]] = Highscore(user)
+
+    def show_highscores(self):
+        """Возвращает сохранения игроков в читаемом виде"""
+        text = []
+        for user in self.users.values():
+            player = []
+            player += [f"{user.data['player']}:"]
+            player += [f"    {self.data['endings'][user.data['end']]}"]
+            player += [f"    Время прохождения: {int(user.data['time'])} секунд"]
+            player += [f"    Награбил {user.data['money']} долларов"]
+            player = "\n".join(player)
+            text += [player]
+        text = "\n".join(text)
+        return text
+
+    def sort_by_name(self):
+        """Сортирует рекорды по имени игрока"""
+        print(self.users)
+        users = self.users.items()
+        users = list(sorted(users, key=lambda user: user[1].data["player"]))
+        users = dict(users)
+        print(users)
+        self.users = users.copy()
+
+    def sort_by_time(self):
+        """Сортирует рекорды по времени прохождения"""
+        print(self.users)
+        users = self.users.items()
+        users = list(sorted(users, key=lambda user: user[1].data["time"]))
+        users = dict(users)
+        print(users)
+        self.users = users.copy()
+
+    def sort_by_score(self):
+        """Сортирует рекорды по награбленным деньгам"""
+        print(self.users)
+        users = self.users.items()
+        users = list(sorted(users, key=lambda user: user[1].data["money"],
+                            reverse=True))
+        users = dict(users)
+        print(users)
+        self.users = users.copy()
 
 
 class Room:
@@ -550,6 +623,13 @@ class Hall:
         self.room_to = room_to
         self.name = name
         self.text = text
+
+
+class Highscore:
+    """Класс информации о игроке в рекордах"""
+    def __init__(self, data):
+        """Инициализация рекорда"""
+        self.data = data.copy()
 
 
 class Tester:
@@ -615,9 +695,9 @@ app = QApplication(sys.argv)
 ex = SceneInterface()
 ex.setFixedSize(800, 560)
 
-pygame.mixer.init()
-pygame.mixer.music.load('Quest Theme.mp3')
-pygame.mixer.music.play(-1)
+mixer.init()
+mixer.music.load('Quest Theme.mp3')
+mixer.music.play(-1)
 
 ex.show()
 
