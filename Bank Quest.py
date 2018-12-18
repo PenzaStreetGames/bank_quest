@@ -1,14 +1,13 @@
 import sys
 from os import walk, getcwd
 from pygame import mixer
-from PyQt5.QtCore import QSize, QStringListModel
-from PyQt5.QtWidgets import QApplication, QPushButton, QLabel, QPlainTextEdit, QVBoxLayout
-from PyQt5.QtWidgets import QMainWindow, QTableWidget, QWidget, QLineEdit, QMessageBox
+from PyQt5.QtWidgets import (QApplication, QPushButton, QLabel, QPlainTextEdit,
+                             QVBoxLayout)
+from PyQt5.QtWidgets import QMainWindow, QLineEdit, QMessageBox
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.Qt import QHBoxLayout, QSpacerItem, QSizePolicy
 from json import loads, dumps
 import time
-import datetime
 from random import random
 
 
@@ -199,11 +198,12 @@ class Quest:
     def create_rooms(self):
         """Создаёт объекты класса Room и записывает их в словарь квеста"""
         self.rooms = {}
-        room_names, room_text = (self.data["room_names"],
-                                 self.data["room_text"])
+        room_names, room_text, room_images = (self.data["room_names"],
+                                              self.data["room_text"],
+                                              self.data["room_images"])
         for i in range(len(room_names)):
             room = Room(room_names[str(i)], room_text[str(i)],
-                        "images/11.png", i)
+                        room_images[str(i)], i)
             self.rooms[str(i)] = room
 
     def user_move(self, way):
@@ -310,10 +310,13 @@ class Quest:
             file.write(dumps(self.properties) + "\n")
 
     def load(self):
-        self.properties = loads(
-            open("saves/{}.json".format(ex.get_name_user()), "r",
-                 encoding="utf-8").read())
-        self.change_room(self.properties["current_room"])
+        try:
+            self.properties = loads(
+                open("saves/{}.json".format(ex.get_name_user()), "r",
+                     encoding="utf-8").read())
+            self.change_room(self.properties["current_room"])
+        except Exception:
+            pass
 
     def write_ending(self):
         """Определяет концовку игрока"""
@@ -578,30 +581,24 @@ class Quest:
 
     def sort_by_name(self):
         """Сортирует рекорды по имени игрока"""
-        print(self.users)
         users = self.users.items()
         users = list(sorted(users, key=lambda user: user[1].data["player"]))
         users = dict(users)
-        print(users)
         self.users = users.copy()
 
     def sort_by_time(self):
         """Сортирует рекорды по времени прохождения"""
-        print(self.users)
         users = self.users.items()
         users = list(sorted(users, key=lambda user: user[1].data["time"]))
         users = dict(users)
-        print(users)
         self.users = users.copy()
 
     def sort_by_score(self):
         """Сортирует рекорды по награбленным деньгам"""
-        print(self.users)
         users = self.users.items()
         users = list(sorted(users, key=lambda user: user[1].data["money"],
                             reverse=True))
         users = dict(users)
-        print(users)
         self.users = users.copy()
 
 
@@ -640,15 +637,30 @@ class Tester:
         self.room_names = data["room_names"]
         self.room_text = data["room_text"]
 
-    def test_ways_room_have_exits(self):
-        """Каждая комната имеет выходы из неё"""
-        fr, to = [], []
-        for way in self.ways:
-            fr.append(way.split()[0])
-            to.append(way.split()[1])
-        for element in to:
-            if int(element):
-                assert element in fr
+    def test_ways_room_have_exit(self):
+        """Каждая комната имеет выход"""
+        rooms = self.room_names.copy()
+        fr = set(way.split()[0] for way in self.ways)
+        for room in rooms:
+            if int(room):
+                assert room in fr
+
+    def test_ways_room_have_entry(self):
+        """Каждая комната имеет вход"""
+        rooms = self.room_names.copy()
+        to = set(way.split()[1] for way in self.ways)
+        for room in rooms:
+            if int(room):
+                assert room in to
+
+    def test_ways_room_have_connect(self):
+        """Каждая комната имеет вход и выход"""
+        rooms = self.room_names.copy()
+        fr = set(way.split()[0] for way in self.ways)
+        to = set(way.split()[1] for way in self.ways)
+        for room in rooms:
+            if int(room):
+                assert room in fr and room in to
 
     def test_isset_scene(self, scene_index):
         """Вспомогательная функция"""
@@ -703,5 +715,18 @@ ex.show()
 
 quest = Quest()
 quest.change_room("1")
+
+test = Tester(quest.data)
+try:
+    test.test_ways_room_have_exit()
+    test.test_ways_room_have_entry()
+    test.test_ways_room_have_connect()
+    test.test_all_rooms_in_ways_isset()
+    test.test_isset_scene_name()
+    test.test_isset_description_scene()
+    test.test_count_scenes()
+    print("Тесты пройдены успешно")
+except AssertionError:
+    print("Не все тесты пройдены успешно")
 
 sys.exit(app.exec())
